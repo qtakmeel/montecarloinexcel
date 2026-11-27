@@ -93,6 +93,15 @@
   .prose { max-width: 62ch; margin-top: 16px; font-size: 16.5px; }
   .prose p + p { margin-top: 14px; }
 
+  .guide-link {
+    display: block; margin-top: 22px; padding: 16px 18px;
+    border: 1px solid var(--grid); border-radius: 4px; background: #fff;
+    text-decoration: none; color: var(--ink); font-size: 15.5px;
+  }
+  .guide-link:hover { border-color: var(--blue); }
+  .guide-link b { color: var(--blue); }
+  .guide-link span { display: block; color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+
   dl.faq { margin-top: 22px; max-width: 66ch; }
   dl.faq dt { font-weight: 700; margin-top: 20px; font-size: 15.5px; }
   dl.faq dd { color: var(--muted); font-size: 15px; margin-top: 5px; }
@@ -156,6 +165,10 @@
     <div class="prose">
       <p>Most Monte Carlo courses hand you Python notebooks you will never open again, or add-ins that do the work invisibly. This toolkit takes the opposite road: the simulation is the spreadsheet. Click any cell and read the formula. Change a blue input and watch the distribution move. Press F9 and the whole world re-rolls.</p>
       <p>That is how you build the intuition that lasts: randomness is not a black box, it is a loop you can read.</p>
+      <a class="guide-link" href="/project-deadline.html">
+        <b>Read the guide:</b> Your boss wants a date. Here's the honest answer, in Excel.
+        <span>Turn "about three months" into a P90 and a probability of hitting the deadline, with six formulas.</span>
+      </a>
     </div>
   </div>
 </section>

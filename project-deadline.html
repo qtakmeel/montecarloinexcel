@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your boss wants a date. Here's the honest answer, in Excel.</title>
+<meta name="description" content="How to answer 'when will it be done?' with a Monte Carlo simulation in Excel: three-point estimates, triangular sampling, P50 and P90, and the probability of hitting your deadline.">
+<link rel="canonical" href="https://montecarloinexcel.com/project-deadline.html">
+<style>
+  :root {
+    --ink: #17212B;
+    --muted: #5B6B7B;
+    --paper: #FDFDFC;
+    --grid: #DDE3EA;
+    --blue: #0F4C99;
+    --blue-dark: #0A3670;
+    --blue-pale: #EAF1FA;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.62;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--blue); }
+  header { border-bottom: 1px solid var(--grid); background: var(--paper); }
+  .bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; }
+  .wordmark { font-weight: 700; font-size: 15px; text-decoration: none; color: var(--ink); }
+  .wordmark span { color: var(--blue); }
+  .buylink {
+    font-family: var(--mono); font-size: 14px; text-decoration: none;
+    color: var(--blue); border: 1px solid var(--blue);
+    padding: 6px 14px; border-radius: 3px;
+  }
+  .buylink:hover { background: var(--blue-pale); }
+
+  .kicker { font-family: var(--mono); font-size: 13px; color: var(--blue); margin: 48px 0 10px; }
+  h1 { font-size: clamp(28px, 4.4vw, 38px); line-height: 1.18; letter-spacing: -0.02em; font-weight: 800; }
+  .standfirst { margin-top: 16px; font-size: 18px; color: var(--muted); }
+  .meta { margin-top: 14px; font-size: 13px; color: var(--muted); font-family: var(--mono); }
+
+  article { padding: 8px 0 24px; }
+  article h2 { font-size: 22px; letter-spacing: -0.01em; margin: 44px 0 12px; }
+  article p { margin-top: 14px; font-size: 16.5px; }
+  article ul, article ol { margin: 14px 0 0 22px; font-size: 16.5px; }
+  article li { margin-top: 8px; }
+  .formula {
+    font-family: var(--mono); font-size: 14px;
+    background: var(--blue-pale); border: 1px solid var(--grid); border-radius: 3px;
+    padding: 10px 14px; margin: 16px 0; overflow-x: auto; white-space: nowrap;
+  }
+  .formula b { color: var(--blue); font-weight: 600; }
+  .note { font-size: 14.5px; color: var(--muted); }
+
+  table.reading { width: 100%; border-collapse: collapse; margin-top: 18px; }
+  table.reading td, table.reading th { border: 1px solid var(--grid); padding: 10px 14px; font-size: 15px; text-align: left; }
+  table.reading th { background: var(--blue-pale); font-family: var(--mono); font-size: 13.5px; }
+
+  .cta-box {
+    margin: 48px 0; border: 1px solid var(--grid); border-radius: 4px;
+    padding: 26px 28px; background: #fff;
+  }
+  .cta-box h2 { margin-top: 0; }
+  .cta {
+    display: inline-block; background: var(--blue); color: #fff; text-decoration: none;
+    font-weight: 600; font-size: 16px; padding: 12px 20px; border-radius: 3px; margin-top: 16px;
+  }
+  .cta:hover { background: var(--blue-dark); }
+
+  footer { border-top: 1px solid var(--grid); padding: 26px 0 40px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="wordmark" href="/">Monte Carlo <span>in Excel</span></a>
+    <a class="buylink" href="https://5332483351521.gumroad.com/l/monte-carlo-toolkit" target="_blank" rel="noopener">$19 — get the toolkit</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="kicker">Guide · Project estimation</div>
+  <h1>Your boss wants a date. Here's the honest answer, in Excel.</h1>
+  <p class="standfirst">Single-point estimates are guesses wearing a suit. A ten-minute Monte Carlo simulation in Excel turns "about three months" into a number you can defend: a distribution of completion dates, a median, a P90, and the actual probability of hitting the deadline.</p>
+  <p class="meta">~12 min read · every formula shown · works in Excel 2010+, LibreOffice Calc, Google Sheets</p>
+</div>
+
+<article class="wrap">
+  <h2>Why "three months" is a lie you tell yourself</h2>
+  <p>Ask a team how long a project will take and you get one number. That number has to be simultaneously the optimistic case, the likely case, and the safe case, and it can't be. Research on project estimation going back decades (the planning fallacy, first named by Kahneman and Tversky in 1979) keeps finding the same thing: people predict the best-case scenario and call it the expected case.</p>
+  <p>The deeper problem is arithmetic. A project with eight tasks, each "about five days", is not forty days. Each task is a range, and ranges don't add the way points do. The good news: the way ranges <em>do</em> add is exactly what a simulation computes, and Excel can run one in front of your eyes.</p>
+
+  <h2>Step 1: Get three numbers per task, not one</h2>
+  <p>For each task, ask the person doing it for three figures:</p>
+  <ul>
+    <li><strong>Best case (a)</strong> — everything goes right. Not zero: the honest minimum.</li>
+    <li><strong>Most likely (m)</strong> — the mode, the single most plausible duration.</li>
+    <li><strong>Worst case (b)</strong> — things go wrong in the ways that actually happen: the dependency slips, the review comes back twice, the environment breaks.</li>
+  </ul>
+  <p>People are surprisingly good at giving you these three and surprisingly unreliable giving you one. The three numbers form a <strong>triangular distribution</strong>: zero probability before a, peak at m, zero after b. It's the workhorse of project risk analysis because it asks only for information humans actually have.</p>
+
+  <h2>Step 2: Why you can't just add the three columns</h2>
+  <p>The tempting shortcut is to sum the "most likely" column and quote it. That understates risk in a specific, predictable way: the upside of one task finishing early (you can't finish a task in negative time) cancels against very little, while the downside of one task blowing out pushes the whole project late. Duration distributions have a long right tail, and long tails compound across tasks. The sum of eight triangular distributions is not triangular, and its right tail is fatter than your intuition says. You need to actually sample it.</p>
+
+  <h2>Step 3: Sample one task with one formula</h2>
+  <p>Put a, m, b in cells B, C, D of a row, and put <code>=RAND()</code> in column A. The duration for one trial is:</p>
+  <div class="formula"><b>=</b>IF($A2&lt;($C2-$B2)/($D2-$B2),<br>&nbsp;&nbsp;$B2+SQRT($A2*($D2-$B2)*($C2-$B2)),<br>&nbsp;&nbsp;$D2-SQRT((1-$A2)*($D2-$B2)*($D2-$C2)))</div>
+  <p>That's the inverse-CDF sampler for the triangular distribution, and it's worth understanding rather than pasting. A uniform random number between 0 and 1 is a "probability dial". The formula asks: is the dial below the point where the peak sits (the peak's position is (m−a)/(b−a))? If yes, we're on the rising side of the triangle, so we solve the triangle's left edge for the duration that corresponds to that probability. If no, the falling side. Geometry, not magic.</p>
+  <p class="note">Derivation, for the curious: the triangular CDF rises linearly from (a, 0) to (m, Fm) and then falls linearly to (b, 1). Invert each line, and the square roots appear because inverting the quadratic area under the rising edge produces one.</p>
+
+  <h2>Step 4: Run 2,000 projects</h2>
+  <p>Copy that row down 2,000 times, once per simulated project, and sum the eight sampled durations across each row:</p>
+  <div class="formula"><b>=</b>SUM($E2:$L2)</div>
+  <p>Every press of F9 re-rolls all 16,000 random draws and produces 2,000 entirely fresh projects. This is the part spreadsheets are uniquely good at: the simulation is not hidden in a macro or an add-in. Click any cell and read it. Change a worst-case estimate in the input table and the entire distribution moves on the next recalculation.</p>
+
+  <h2>Step 5: Read the distribution like an adult</h2>
+  <p>With 2,000 simulated totals in a column, the answers fall out with three formulas:</p>
+  <div class="formula">Median (P50): <b>=</b>PERCENTILE(totals, 0.5)<br>90% under (P90): <b>=</b>PERCENTILE(totals, 0.9)<br>P(on time): <b>=</b>COUNTIF(totals, "&lt;="&amp;deadline)/2000</div>
+  <p>Here's what a real run of this exact simulation produces (eight tasks, three-point estimates, 2,000 trials):</p>
+  <table class="reading">
+    <tr><th>Statistic</th><th>Value</th><th>What you say</th></tr>
+    <tr><td>Sum of "most likely" estimates</td><td>59 days</td><td>Nothing. This number is a trap.</td></tr>
+    <tr><td>Median (P50)</td><td>61 days</td><td>"Half of simulated projects finish by here."</td></tr>
+    <tr><td>P90</td><td>88 days</td><td>"Nine in ten simulated projects finish by here. This is the date I'd commit to."</td></tr>
+    <tr><td>P(on time at 65 days)</td><td>59%</td><td>"If 65 days is a hard deadline, it's a coin flip. We need scope, time, or acceptance of risk."</td></tr>
+  </table>
+  <p>Notice the shape of the conversation this enables. You are no longer the person who said "three months" and slipped. You are the person who quantified the risk <em>before</em> it happened, which is the only position from which anyone has ever successfully renegotiated a deadline.</p>
+
+  <h2>Step 6: Know what this model doesn't know</h2>
+  <p>Honesty cuts both ways, so here is what the triangular simulation misses:</p>
+  <ul>
+    <li><strong>Correlated tasks.</strong> If one team's slowness slows five tasks at once, independent sampling understates the tail. Fix: simulate the shared factor first (a "team speed" multiplier per trial) and multiply it into each task.</li>
+    <li><strong>Unknown unknowns.</strong> The worst case b is still an opinion. The model is only as honest as the three numbers you feed it.</li>
+    <li><strong>Rework loops.</strong> If a failed review sends a task back to the start, that's a different model (a random loop), not a wider triangle.</li>
+  </ul>
+  <p>None of these are reasons to go back to a single number. They are reasons to treat the P90 as a floor for the conversation, not a ceiling.</p>
+
+  <h2>The whole thing in six sentences</h2>
+  <ol>
+    <li>Collect a, m, b per task from the people doing the work.</li>
+    <li>Sample each task from its triangular distribution with the inverse-CDF formula.</li>
+    <li>Sum across tasks for 2,000 simulated projects.</li>
+    <li>Quote the median as the expectation and the P90 as the commitment.</li>
+    <li>Report P(on time) against the imposed deadline as a probability, not a promise.</li>
+    <li>Re-run the whole thing whenever an estimate changes. F9 is your friend.</li>
+  </ol>
+
+  <div class="cta-box">
+    <h2>Want sheet 3 of this article, already built?</h2>
+    <p>This walkthrough is Sheet 3 ("Project Estimation") of the Monte Carlo Toolkit for Excel, sitting next to four other worked sheets: the law of large numbers with dice, estimating pi, retirement futures, and a build-your-own skeleton. Every formula visible, nothing hidden, $19 once.</p>
+    <a class="cta" href="https://5332483351521.gumroad.com/l/monte-carlo-toolkit" target="_blank" rel="noopener">Get the toolkit — $19</a>
+  </div>
+</article>
+
+<footer>
+  <div class="wrap">© 2026 Monte Carlo in Excel · Questions: hello@montecarloinexcel.com · <a href="/">Home</a></div>
+</footer>
+
+</body>
+</html>
