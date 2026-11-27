@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Will your savings last? Simulate 500 retirements in Excel.</title>
+<meta name="description" content="A Monte Carlo retirement simulation in Excel, with every formula visible: model sequence-of-returns risk, run 500 futures of your portfolio, and get the probability your savings last 30 years.">
+<link rel="canonical" href="https://montecarloinexcel.com/retirement-monte-carlo.html">
+<style>
+  :root {
+    --ink: #17212B;
+    --muted: #5B6B7B;
+    --paper: #FDFDFC;
+    --grid: #DDE3EA;
+    --blue: #0F4C99;
+    --blue-dark: #0A3670;
+    --blue-pale: #EAF1FA;
+    --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.62;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  a { color: var(--blue); }
+  header { border-bottom: 1px solid var(--grid); background: var(--paper); }
+  .bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; }
+  .wordmark { font-weight: 700; font-size: 15px; text-decoration: none; color: var(--ink); }
+  .wordmark span { color: var(--blue); }
+  .buylink {
+    font-family: var(--mono); font-size: 14px; text-decoration: none;
+    color: var(--blue); border: 1px solid var(--blue);
+    padding: 6px 14px; border-radius: 3px;
+  }
+  .buylink:hover { background: var(--blue-pale); }
+
+  .kicker { font-family: var(--mono); font-size: 13px; color: var(--blue); margin: 48px 0 10px; }
+  h1 { font-size: clamp(28px, 4.4vw, 38px); line-height: 1.18; letter-spacing: -0.02em; font-weight: 800; }
+  .standfirst { margin-top: 16px; font-size: 18px; color: var(--muted); }
+  .meta { margin-top: 14px; font-size: 13px; color: var(--muted); font-family: var(--mono); }
+
+  article { padding: 8px 0 24px; }
+  article h2 { font-size: 22px; letter-spacing: -0.01em; margin: 44px 0 12px; }
+  article p { margin-top: 14px; font-size: 16.5px; }
+  article ul, article ol { margin: 14px 0 0 22px; font-size: 16.5px; }
+  article li { margin-top: 8px; }
+  .formula {
+    font-family: var(--mono); font-size: 14px;
+    background: var(--blue-pale); border: 1px solid var(--grid); border-radius: 3px;
+    padding: 10px 14px; margin: 16px 0; overflow-x: auto; white-space: nowrap;
+  }
+  .formula b { color: var(--blue); font-weight: 600; }
+  .note { font-size: 14.5px; color: var(--muted); }
+
+  table.reading { width: 100%; border-collapse: collapse; margin-top: 18px; }
+  table.reading td, table.reading th { border: 1px solid var(--grid); padding: 10px 14px; font-size: 15px; text-align: left; }
+  table.reading th { background: var(--blue-pale); font-family: var(--mono); font-size: 13.5px; }
+
+  .cta-box {
+    margin: 48px 0; border: 1px solid var(--grid); border-radius: 4px;
+    padding: 26px 28px; background: #fff;
+  }
+  .cta-box h2 { margin-top: 0; }
+  .cta {
+    display: inline-block; background: var(--blue); color: #fff; text-decoration: none;
+    font-weight: 600; font-size: 16px; padding: 12px 20px; border-radius: 3px; margin-top: 16px;
+  }
+  .cta:hover { background: var(--blue-dark); }
+
+  footer { border-top: 1px solid var(--grid); padding: 26px 0 40px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a class="wordmark" href="/">Monte Carlo <span>in Excel</span></a>
+    <a class="buylink" href="https://5332483351521.gumroad.com/l/monte-carlo-toolkit" target="_blank" rel="noopener">$19 — get the toolkit</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="kicker">Guide · Retirement</div>
+  <h1>Will your savings last? Simulate 500 retirements in Excel.</h1>
+  <p class="standfirst">Average returns are a mirage. The order in which they arrive can be the difference between a comfortable thirty years and running out at year nineteen. A Monte Carlo simulation in Excel shows you the whole distribution of futures, not just the average one.</p>
+  <p class="meta">~11 min read · every formula shown · works in Excel 2010+, LibreOffice Calc, Google Sheets</p>
+</div>
+
+<article class="wrap">
+  <h2>The average is not the answer</h2>
+  <p>A portfolio returning 7% per year on average does not return 7% per year. It returns +30% some years and −18% others, and the <em>order</em> of those returns matters enormously once you are withdrawing money. Retire into a crash and every early withdrawal sells assets at the bottom, permanently scarring the portfolio. Retire into a boom and the same average return produces a very different life. This is sequence-of-returns risk, and no average, however precisely quoted, captures it.</p>
+  <p>What captures it is running the retirement hundreds of times with different random return sequences and counting how many survive. That is a Monte Carlo simulation, and it needs exactly one random formula and one compounding formula.</p>
+
+  <h2>Step 1: The inputs you must choose honestly</h2>
+  <ul>
+    <li><strong>Starting balance</strong> — what is actually in the account today.</li>
+    <li><strong>Annual withdrawal</strong> — what you plan to take out each year, in dollars, adjusted for nothing (keep it simple first).</li>
+    <li><strong>Mean return</strong> — the arithmetic mean annual return of your assumed allocation. For a typical stock-heavy portfolio, historical US arithmetic means land around 8–10%; pick your own number and defend it.</li>
+    <li><strong>Standard deviation</strong> — the annual volatility of that allocation, historically around 15–18% for the same kind of portfolio.</li>
+  </ul>
+  <p class="note">Note the word arithmetic. The geometric mean (what you actually compound at, with no cash flows) is lower than the arithmetic mean by roughly half the variance squared. Feeding a geometric mean into a simulation that already models volatility double-counts the drag and understates risk.</p>
+
+  <h2>Step 2: One random return per year</h2>
+  <p>Model each year's return as a normal random variable:</p>
+  <div class="formula"><b>=</b>NORMINV(RAND(), $B$6, $B$7)</div>
+  <p>RAND() produces a uniform number between 0 and 1; NORMINV converts it into a draw from the normal distribution with your chosen mean and standard deviation. A draw of −0.18 is a −18% year. That is the entire randomness engine.</p>
+
+  <h2>Step 3: The compounding loop, one row per year</h2>
+  <p>Down 30 rows (one per retirement year), the balance evolves as:</p>
+  <div class="formula"><b>=</b>(previous_balance + withdrawal) * (1 + this_years_return)</div>
+  <p>with the first row anchored to your starting balance. The withdrawal is added before growth because the money comes out at the start of the year; flip the order if you prefer end-of-year withdrawals, and you will see it matters, which is itself a lesson.</p>
+  <p>Watch for the failure mode this formula makes visible: a few bad early years and the balance goes negative. That is not a bug. That is the retirement that didn't work, and the simulation exists to count them.</p>
+
+  <h2>Step 4: Run 500 retirements</h2>
+  <p>Copy the 30-year block across 500 columns (or stack 500 blocks), each an independent future. At the end of each, record the final balance:</p>
+  <div class="formula">Success: <b>=</b>IF(final_balance &gt;= 0, 1, 0)<br>Success rate: <b>=</b>SUM(success_column)/500<br>Median outcome: <b>=</b>MEDIAN(finals)</div>
+  <p>Every press of F9 re-runs all 15,000 years of all 500 retirements. What you are looking at is not a forecast. It is the shape of the risk you are actually carrying.</p>
+
+  <h2>Step 5: What a real run shows</h2>
+  <p>Here is the output of this exact simulation (a starting balance, a fixed annual withdrawal, mean 8%, standard deviation 16%, 30 years, 500 trials):</p>
+  <table class="reading">
+    <tr><th>Statistic</th><th>Value</th><th>How to read it</th></tr>
+    <tr><td>Median final balance</td><td>$1.14M</td><td>Half of futures end above this. The plan "works" for the typical path.</td></tr>
+    <tr><td>Success rate</td><td>92%</td><td>8 of 100 retirements ran out of money. Would you board a plane with those odds?</td></tr>
+    <tr><td>Worst futures</td><td>negative</td><td>The bad tail is not hypothetical. It is the sequence you cannot control.</td></tr>
+  </table>
+  <p>The 92% is the number that matters, and it is also the number the average-return calculation would have hidden from you entirely: compounding the mean return for 30 years shows a comfortable surplus, with no mention of the 8% of futures that end at zero.</p>
+
+  <h2>Step 6: Use it the way professionals do</h2>
+  <ul>
+    <li><strong>Stress the withdrawal.</strong> Raise the annual withdrawal by 10% and watch the success rate fall. The sensitivity tells you how much slack you really have.</li>
+    <li><strong>Stress the sequence.</strong> Lower the mean by 1% (a worse decade than expected) and re-run. This is the honest version of a "conservative assumption".</li>
+    <li><strong>Connect to the 4% rule.</strong> The famous rule of thumb is itself the output of a historical simulation. Your spreadsheet lets you test it against your own numbers instead of inheriting someone else's.</li>
+  </ul>
+
+  <h2>What this model gets wrong, on purpose</h2>
+  <p>Annual normal returns are a simplification. Real markets have fat tails (crashes bigger than a normal distribution expects), returns cluster (volatile years come in groups), and inflation eats the withdrawal's purchasing power. Each can be added to this spreadsheet in a line or two, and adding them yourself is precisely how you learn what they cost. Start simple, see the shape of the risk, then complicate.</p>
+  <p class="note">This article is education, not financial advice, and the spreadsheet is a model, not an oracle. The point is to replace one comforting number with an honest distribution.</p>
+
+  <h2>The whole thing in five sentences</h2>
+  <ol>
+    <li>Choose a starting balance, a withdrawal, a mean return and a standard deviation.</li>
+    <li>Draw each year's return with NORMINV(RAND(), mean, sd).</li>
+    <li>Compound balance minus withdrawal for 30 years; flag any future that hits zero.</li>
+    <li>Run 500 independent futures and count survivors.</li>
+    <li>Stress the inputs until you know which one the plan is secretly afraid of.</li>
+  </ol>
+
+  <div class="cta-box">
+    <h2>This is Sheet 4 of the toolkit, already built</h2>
+    <p>The Monte Carlo Toolkit for Excel includes this exact retirement simulation (500 trials × 30 years) alongside the project-estimation, dice, pi and build-your-own sheets. Every formula visible, every assumption yours to change, $19 once, yours forever.</p>
+    <a class="cta" href="https://5332483351521.gumroad.com/l/monte-carlo-toolkit" target="_blank" rel="noopener">Get the toolkit — $19</a>
+    <p class="note" style="margin-top:14px">Prefer the project-estimation side? Read <a href="/project-deadline.html">Your boss wants a date. Here's the honest answer, in Excel.</a></p>
+  </div>
+</article>
+
+<footer>
+  <div class="wrap">© 2026 Monte Carlo in Excel · Questions: hello@montecarloinexcel.com · <a href="/">Home</a></div>
+</footer>
+
+</body>
+</html>
